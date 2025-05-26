@@ -33,7 +33,7 @@ A Model Context Protocol (MCP) server that provides an AI agent interface for qu
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/succinct-mcp-server.git
+git clone https://github.com/dev3Nigerian/succint-whitepaper-mcp.git
 cd succinct-mcp-server
 ```
 
@@ -83,6 +83,8 @@ The server will start on `http://localhost:3000` by default.
    ```
 
 ## 📚 API Documentation
+
+**POSTMAN🚀:** https://www.postman.com/lunar-rocket-592846/succint-whitepaper-mcp/collection/fv9tqu7/succinct-network-mcp-server?action=share&creator=30802512&active-environment=30802512-c4779264-fd1a-4b00-9b9d-2273f0c4d607
 
 ### Base URL
 
@@ -499,7 +501,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. **Check** the [Issues](https://github.com/dev3nigerian/succinct-mcp-server/issues) page
+1. **Check** the [Issues](https://github.com/dev3Nigerian/succint-whitepaper-mcp.git) page
 2. **Create** a new issue with detailed description
 3. **Include** error messages and steps to reproduce
 

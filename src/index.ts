@@ -302,7 +302,6 @@ async function handlePromptGet(params: any) {
   }
 }
 
-// Replace your existing main function with this:
 async function main() {
   const transport = new HttpTransport(3000);
   

@@ -290,9 +290,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://your-frontend-domain.vercel.app',
-        'https://your-frontend-domain.netlify.app',
-        'https://your-custom-domain.com'
+        'https://succinct-whitepaper-chat.vercel.app',
       ]
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,

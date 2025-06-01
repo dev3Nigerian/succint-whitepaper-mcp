@@ -1,13 +1,11 @@
-// Keep all your existing imports and add the HttpTransport import
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import express from 'express';
+import cors from 'cors';
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { WhitepaperContent } from "./data/whitepaper.js";
 import { KeyConcepts } from "./data/keyConcepts.js";
 import { calculateRelevance } from "./utils/search.js";
-import { HttpTransport } from "./transport.js";
-import { z } from "zod";
 
-// Keep all your existing interfaces and schemas
+// Keep all your existing interfaces
 interface Section {
   heading: string;
   content: string;
@@ -24,21 +22,6 @@ interface SearchResult {
   content: string;
   relevance: number;
 }
-
-// Keep all your existing server setup and handlers
-const server = new Server(
-  {
-    name: "succinct-whitepaper-agent",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      resources: {},
-      tools: {},
-      prompts: {},
-    },
-  }
-);
 
 // Keep your existing searchWhitepaper function
 function searchWhitepaper(query: string): SearchResult[] {
@@ -77,10 +60,7 @@ function searchWhitepaper(query: string): SearchResult[] {
   return results;
 }
 
-// Keep all your existing server.setRequestHandler calls exactly as they are
-// (Don't change the existing handlers with Zod schemas)
-
-// Add these helper functions after your existing handlers but before the main function:
+// Your existing tool handling functions
 async function handleToolCall(params: any) {
   const { name, arguments: args } = params;
   
@@ -302,105 +282,205 @@ async function handlePromptGet(params: any) {
   }
 }
 
-async function main() {
-  const transport = new HttpTransport(3000);
-  
-  transport.onMessage(async (message) => {
-    const { method, params } = message;
-    
-    switch (method) {
-      case 'tools/list':
-        return {
-          tools: [
-            {
-              name: "search_whitepaper",
-              description: "Search for information in the Succinct Network whitepaper",
-              inputSchema: {
-                type: "object",
-                properties: {
-                  query: {
-                    type: "string",
-                    description: "Search query to find relevant information in the whitepaper",
-                  },
-                },
-                required: ["query"],
-              },
-            },
-            {
-              name: "get_section",
-              description: "Get a specific section of the whitepaper",
-              inputSchema: {
-                type: "object",
-                properties: {
-                  section: {
-                    type: "string",
-                    description: "Name of the section to retrieve",
-                  },
-                },
-                required: ["section"],
-              },
-            },
-            {
-              name: "list_sections",
-              description: "List all sections and subsections in the whitepaper",
-              inputSchema: {
-                type: "object",
-                properties: {},
-                required: [],
-              },
-            },
-            {
-              name: "get_key_concepts",
-              description: "Get an explanation of key concepts in the Succinct Network",
-              inputSchema: {
-                type: "object",
-                properties: {
-                  concept: {
-                    type: "string",
-                    description: "Name of the concept to explain",
-                  },
-                },
-                required: ["concept"],
-              },
-            },
-          ],
-        };
-        
-      case 'tools/call':
-        return await handleToolCall(params);
-        
-      case 'prompts/list':
-        return {
-          prompts: [
-            {
-              name: "whitepaper_summary",
-              description: "Get a summary of the entire Succinct Network whitepaper",
-            },
-            {
-              name: "proof_contests_explained",
-              description: "Get a detailed explanation of how proof contests work",
-            },
-            {
-              name: "network_architecture",
-              description: "Get an overview of the Succinct Network architecture",
-            },
-            {
-              name: "applications",
-              description: "Learn about potential applications of the Succinct Network",
-            },
-          ],
-        };
-        
-      case 'prompts/get':
-        return await handlePromptGet(params);
-        
-      default:
-        throw new Error(`Unknown method: ${method}`);
+// Express.js setup for Render deployment
+const app = express();
+const PORT = parseInt(process.env.PORT || '3000', 10);
+
+// Middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        'https://your-frontend-domain.vercel.app',
+        'https://your-frontend-domain.netlify.app',
+        'https://your-custom-domain.com'
+      ]
+    : ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'Succinct Network MCP Server'
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Succinct Network MCP Server',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      tools_list: '/tools/list',
+      tools_call: '/tools/call',
+      prompts_list: '/prompts/list',
+      prompts_get: '/prompts/get'
     }
   });
-  
-  await transport.start();
-  console.error("✅ Succinct Network Whitepaper MCP server is ready for HTTP requests!");
-}
+});
 
-main().catch(console.error);
+// MCP Protocol endpoints
+app.get('/tools/list', async (req, res) => {
+  try {
+    const response = {
+      tools: [
+        {
+          name: "search_whitepaper",
+          description: "Search for information in the Succinct Network whitepaper",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "Search query to find relevant information in the whitepaper",
+              },
+            },
+            required: ["query"],
+          },
+        },
+        {
+          name: "get_section",
+          description: "Get a specific section of the whitepaper",
+          inputSchema: {
+            type: "object",
+            properties: {
+              section: {
+                type: "string",
+                description: "Name of the section to retrieve",
+              },
+            },
+            required: ["section"],
+          },
+        },
+        {
+          name: "list_sections",
+          description: "List all sections and subsections in the whitepaper",
+          inputSchema: {
+            type: "object",
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: "get_key_concepts",
+          description: "Get an explanation of key concepts in the Succinct Network",
+          inputSchema: {
+            type: "object",
+            properties: {
+              concept: {
+                type: "string",
+                description: "Name of the concept to explain",
+              },
+            },
+            required: ["concept"],
+          },
+        },
+      ],
+    };
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
+  }
+});
+
+app.post('/tools/call', async (req, res) => {
+  try {
+    const { name, arguments: args } = req.body;
+    const result = await handleToolCall({ name, arguments: args });
+    res.json(result);
+  } catch (error) {
+    if (error instanceof McpError) {
+      res.status(400).json({ 
+        error: error.message, 
+        code: error.code 
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: String(error) 
+      });
+    }
+  }
+});
+
+app.get('/prompts/list', async (req, res) => {
+  try {
+    const response = {
+      prompts: [
+        {
+          name: "whitepaper_summary",
+          description: "Get a summary of the entire Succinct Network whitepaper",
+        },
+        {
+          name: "proof_contests_explained",
+          description: "Get a detailed explanation of how proof contests work",
+        },
+        {
+          name: "network_architecture",
+          description: "Get an overview of the Succinct Network architecture",
+        },
+        {
+          name: "applications",
+          description: "Learn about potential applications of the Succinct Network",
+        },
+      ],
+    };
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error', details: String(error) });
+  }
+});
+
+app.post('/prompts/get', async (req, res) => {
+  try {
+    const { name } = req.body;
+    const result = await handlePromptGet({ name });
+    res.json(result);
+  } catch (error) {
+    if (error instanceof McpError) {
+      res.status(400).json({ 
+        error: error.message, 
+        code: error.code 
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: String(error) 
+      });
+    }
+  }
+});
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { details: err.message })
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Not found',
+    available_endpoints: ['/health', '/tools/list', '/tools/call', '/prompts/list', '/prompts/get']
+  });
+});
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Succinct Network MCP Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+});
+
+export default app;
